@@ -23,37 +23,22 @@ canvas{display:block;}
   background:linear-gradient(145deg,#1c0500,#4a1000);border:2px solid #ff6b00;color:#ffd700;
   padding:6px 14px;border-radius:30px;cursor:pointer;z-index:100;}
 
-/* 道具欄 */
-#item-bar{position:absolute;bottom:210px;left:50%;transform:translateX(-50%);
-  display:none;pointer-events:all;flex-direction:row;gap:8px;
-  background:rgba(0,0,0,0.6);border:1px solid rgba(255,120,0,0.4);
-  border-radius:16px;padding:6px 10px;backdrop-filter:blur(5px);}
-.item-slot{width:48px;height:48px;border-radius:10px;cursor:pointer;
-  background:rgba(20,5,0,0.7);border:2px solid rgba(255,100,0,0.3);
-  display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;}
-.item-slot.selected{border-color:#00ffcc;box-shadow:0 0 15px rgba(0,255,180,0.5);}
-.item-emoji{font-size:22px;}
-.item-label{font-size:7px;color:#ffcc88;}
-
 /* 控制按鈕 */
 #controls{position:absolute;bottom:0;left:0;right:0;height:220px;display:none;pointer-events:none;}
 .dpad-btn, #btn-jump, #btn-use{pointer-events:all;user-select:none;}
 #dpad{position:absolute;bottom:30px;left:20px;width:150px;height:150px;}
-.dpad-btn{position:absolute;width:55px;height:55px;background:rgba(80,20,0,0.6);border:2px solid #ff6b00;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#ffd700;font-size:24px;}
+.dpad-btn{position:absolute;width:55px;height:55px;background:rgba(80,20,0,0.7);border:2px solid #ff6b00;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#ffd700;font-size:24px;}
 #btn-up{left:50px;top:0;}
 #btn-left2{left:0;top:60px;}
-#btn-right2{right:100px;top:60px;} /* 修正重疊問題 */
+#btn-right2{right:100px;top:60px;}
 
 #right-btns{position:absolute;bottom:30px;right:20px;width:130px;height:150px;}
-#btn-jump{position:absolute;top:0;right:0;width:85px;height:85px;border-radius:50%;background:linear-gradient(145deg,#8b2200,#4a1000);border:3px solid #ff8800;color:#ff8800;display:flex;align-items:center;justify-content:center;font-weight:900;box-shadow:0 5px 15px rgba(0,0,0,0.5);}
-#btn-use{position:absolute;bottom:0;left:0;width:75px;height:75px;border-radius:50%;background:linear-gradient(145deg,#004433,#002211);border:3px solid #00ffcc;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+#btn-jump{position:absolute;top:0;right:0;width:90px;height:90px;border-radius:50%;background:linear-gradient(145deg,#8b2200,#4a1000);border:3px solid #ff8800;color:#ff8800;display:flex;align-items:center;justify-content:center;font-weight:900;box-shadow:0 5px 15px rgba(0,0,0,0.5);}
 
-/* 螢幕特效 */
-#danger-flash{position:absolute;inset:0;pointer-events:none;z-index:5;}
-
-/* 選單與結算 */
-#menu-screen, #gameover-screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);z-index:200;pointer-events:all;}
-.luxury-btn{background:linear-gradient(160deg,#8b2200,#2a0500);padding:16px 50px;border-radius:50px;border:2px solid #ffd700;color:#ffd700;cursor:pointer;font-family:'Cinzel Decorative';font-size:20px;letter-spacing:2px;box-shadow:0 0 20px rgba(255,100,0,0.4);}
+/* 特效與選單 */
+#danger-flash{position:absolute;inset:0;pointer-events:none;z-index:5;transition: background 0.2s;}
+#menu-screen, #gameover-screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);z-index:200;pointer-events:all;}
+.luxury-btn{background:linear-gradient(160deg,#8b2200,#2a0500);padding:16px 50px;border-radius:50px;border:2px solid #ffd700;color:#ffd700;cursor:pointer;font-family:'Cinzel Decorative';font-size:20px;}
 </style>
 </head>
 <body>
@@ -62,7 +47,6 @@ canvas{display:block;}
     <div id="score-display"><div id="score-label">HEIGHT</div><div id="score-value">0</div></div>
     <button id="lang-btn">EN / 中</button>
     <div id="danger-flash"></div>
-    <div id="item-bar"></div>
 
     <div id="controls">
       <div id="dpad">
@@ -70,109 +54,92 @@ canvas{display:block;}
         <div class="dpad-btn" id="btn-left2">◀</div>
         <div class="dpad-btn" id="btn-right2">▶</div>
       </div>
-      <div id="right-btns">
-        <div id="btn-jump">JUMP</div>
-        <div id="btn-use"><span id="btn-use-icon" style="font-size:24px">🎒</span><span style="font-size:10px;color:#00ffcc">USE</span></div>
-      </div>
+      <div id="right-btns"><div id="btn-jump">JUMP</div></div>
     </div>
 
     <div id="menu-screen">
-      <h1 style="color:#ffd700;font-size:42px;text-shadow:0 0 20px #ff6600;margin-bottom:30px;text-align:center;">VOLCANO<br>JUMP</h1>
+      <h1 style="color:#ffd700;font-size:42px;margin-bottom:30px;text-align:center;">VOLCANO<br>JUMP</h1>
       <button class="luxury-btn" id="start-btn">PLAY</button>
     </div>
 
     <div id="gameover-screen" style="display:none">
-      <h2 style="color:#ff3300;margin-bottom:10px;">CONSUMED</h2>
+      <h2 style="color:#ff3300;margin-bottom:10px;">GAME OVER</h2>
       <div style="color:#ffd700;font-size:50px;margin-bottom:20px;" id="final-score">0</div>
-      <button class="luxury-btn" id="retry-btn">RISE AGAIN</button>
+      <button class="luxury-btn" id="retry-btn">RETRY</button>
     </div>
   </div>
 </div>
 
 <script>
-/* ═══════ 全域宣告 ═══════ */
-var inventory = [];
-var selectedSlot = 0;
-var phaserGame = null;
-const ITEM_INFO = {
-  wing: { emoji: '🪶', label: 'WINGS' },
-  sub:  { emoji: '🚀', label: 'CAPSULE' },
-  drill:{ emoji: '🔩', label: 'DRILL' },
-  sword:{ emoji: '⚔️', label: 'SWORD' }
-};
-
-function renderItemBar() {
-  const bar = document.getElementById('item-bar');
-  bar.innerHTML = '';
-  if (inventory.length === 0) { bar.style.display = 'none'; return; }
-  bar.style.display = 'flex';
-  inventory.forEach((item, i) => {
-    const slot = document.createElement('div');
-    slot.className = 'item-slot' + (i === selectedSlot ? ' selected' : '');
-    slot.innerHTML = `<span class="item-emoji">${ITEM_INFO[item.type].emoji}</span><span class="item-label">${ITEM_INFO[item.type].label}</span>`;
-    slot.onclick = (e) => { e.stopPropagation(); selectedSlot = i; renderItemBar(); };
-    bar.appendChild(slot);
-  });
-}
-
-/* ═══════ 遊戲場景 ═══════ */
+/* ═══════ 核心場景 ═══════ */
 class MainScene extends Phaser.Scene {
   constructor() { super('MainScene'); }
   
   create() {
     this.score = 0;
     this.alive = true;
-    this.lavaY = 800;
+    this.lavaY = 900; // 降低初始岩漿位置
     this.platforms = this.physics.add.staticGroup();
     
-    // 生成初始平台
-    for(let i=0; i<15; i++) {
-        let x = Phaser.Math.Between(50, 370);
-        let y = 700 - (i * 120);
+    // 1. 強制生成起始安全平台
+    this.platforms.create(210, 650, 'plat_wide').setScale(2.5, 1).refreshBody();
+
+    // 2. 隨機生成上方平台
+    for(let i=1; i<20; i++) {
+        let x = Phaser.Math.Between(60, 360);
+        let y = 650 - (i * 130);
         this.platforms.create(x, y, 'plat');
     }
 
-    this.player = this.physics.add.sprite(210, 600, 'hero');
-    this.player.setCollideWorldBounds(false);
+    // 3. 玩家初始位置調高
+    this.player = this.physics.add.sprite(210, 450, 'hero');
+    this.player.setBounce(0.1);
     this.physics.add.collider(this.player, this.platforms, (p, plat) => {
-        if(p.body.touching.down) p.setVelocityY(-550);
+        if(p.body.touching.down) p.setVelocityY(-620); // 碰撞即彈跳
     });
 
     this.cameras.main.startFollow(this.player, true, 0, 0.1, 0, 150);
     this.lavaGfx = this.add.graphics().setDepth(5);
     
-    // 控制綁定
-    this.cursors = this.input.keyboard.createCursorKeys();
-    this.setupTouchControls();
+    this.setupControls();
   }
 
-  setupTouchControls() {
+  setupControls() {
     this.moveL = false; this.moveR = false;
-    document.getElementById('btn-left2').onpointerdown = () => this.moveL = true;
-    document.getElementById('btn-left2').onpointerup = () => this.moveL = false;
-    document.getElementById('btn-right2').onpointerdown = () => this.moveR = true;
-    document.getElementById('btn-right2').onpointerup = () => this.moveR = false;
-    document.getElementById('btn-jump').onpointerdown = () => { if(this.player.body.touching.down) this.player.setVelocityY(-700); };
+    const bind = (id, start, end) => {
+        let el = document.getElementById(id);
+        el.onpointerdown = start; el.onpointerup = end; el.onpointerout = end;
+    };
+    bind('btn-left2', () => this.moveL = true, () => this.moveL = false);
+    bind('btn-right2', () => this.moveR = true, () => this.moveR = false);
+    document.getElementById('btn-jump').onpointerdown = () => {
+        if(this.player.body.touching.down) this.player.setVelocityY(-750);
+    };
+    this.cursors = this.input.keyboard.createCursorKeys();
   }
 
   update() {
     if(!this.alive) return;
     
-    // 移動邏輯
-    if(this.moveL || this.cursors.left.isDown) this.player.setVelocityX(-250);
-    else if(this.moveR || this.cursors.right.isDown) this.player.setVelocityX(250);
+    // 左右移動控制
+    if(this.moveL || this.cursors.left.isDown) this.player.setVelocityX(-280);
+    else if(this.moveR || this.cursors.right.isDown) this.player.setVelocityX(280);
     else this.player.setVelocityX(0);
 
-    // 岩漿上升
-    this.lavaY -= 0.8 + (this.score / 500);
+    // 岩漿緩慢上升
+    this.lavaY -= 0.7 + (this.score / 600);
     this.drawLava();
 
-    // 計分
-    let dist = Math.floor((600 - this.player.y) / 10);
-    if(dist > this.score) {
-        this.score = dist;
+    // 計分系統
+    let currentHeight = Math.floor((450 - this.player.y) / 10);
+    if(currentHeight > this.score) {
+        this.score = currentHeight;
         document.getElementById('score-value').textContent = this.score;
     }
+
+    // 邊界傳送 (螢幕左右互通)
+    if(this.player.x < 0) this.player.x = 420;
+    if(this.player.x > 420) this.player.x = 0;
 
     // 死亡判定
     if(this.player.y > this.lavaY) this.gameOver();
@@ -180,13 +147,13 @@ class MainScene extends Phaser.Scene {
 
   drawLava() {
     this.lavaGfx.clear();
-    this.lavaGfx.fillStyle(0xff4400, 0.8);
+    this.lavaGfx.fillStyle(0xff2200, 0.85);
     let screenLavaY = this.lavaY - this.cameras.main.scrollY;
     this.lavaGfx.fillRect(0, screenLavaY, 420, 1000);
     
-    // 危機閃爍
+    // 危機閃爍提醒
     let dist = this.lavaY - this.player.y;
-    let alpha = Phaser.Math.Clamp(1 - (dist / 300), 0, 0.6);
+    let alpha = Phaser.Math.Clamp(1 - (dist / 350), 0, 0.7);
     document.getElementById('danger-flash').style.background = `rgba(255,0,0,${alpha})`;
   }
 
@@ -198,17 +165,20 @@ class MainScene extends Phaser.Scene {
   }
 }
 
-// 預載場景 (生成材質防止黑屏)
+/* ═══════ 啟動與材質生成 ═══════ */
 class BootScene extends Phaser.Scene {
     constructor() { super('BootScene'); }
     create() {
-        // 生成英雄材質
         let g = this.make.graphics({add:false});
-        g.fillStyle(0xffaa00); g.fillCircle(15, 15, 15);
+        // 角色材質
+        g.fillStyle(0xffcc00); g.fillCircle(15, 15, 15);
+        g.fillStyle(0x000000); g.fillCircle(10, 12, 2); g.fillCircle(20, 12, 2);
         g.generateTexture('hero', 30, 30);
-        // 生成平台材質
-        g.clear(); g.fillStyle(0x884422); g.fillRoundedRect(0, 0, 80, 15, 5);
+        // 平台材質
+        g.clear(); g.fillStyle(0x884422); g.fillRoundedRect(0, 0, 80, 15, 4);
         g.generateTexture('plat', 80, 15);
+        g.generateTexture('plat_wide', 160, 15);
+        
         this.scene.start('MainScene');
     }
 }
@@ -216,7 +186,7 @@ class BootScene extends Phaser.Scene {
 const cfg = {
   type: Phaser.AUTO, width: 420, height: 748,
   parent: 'game-container',
-  physics: { default: 'arcade', arcade: { gravity: { y: 1000 } } },
+  physics: { default: 'arcade', arcade: { gravity: { y: 1100 } } },
   scene: [BootScene, MainScene]
 };
 
