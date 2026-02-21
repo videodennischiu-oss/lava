@@ -308,6 +308,22 @@ canvas{display:block;}
 </div>
 
 <script>
+/* ═══════ 全域變數（最先宣告，避免 TDZ） ═══════ */
+var inventory=[];
+var selectedSlot=0;
+var lang='en';
+var bgm=null,bgmReady=false,gameStarted=false;
+var bestScore=0,phaserGame=null;
+var scene=null;
+
+const GW=420,GH=748;
+const ITEM_INFO={
+  wing:{emoji:'🪶',label:'itemWing',dur:6000},
+  sub: {emoji:'🚀',label:'itemSub', dur:5000},
+  drill:{emoji:'🔩',label:'itemDrill',dur:3000},
+  sword:{emoji:'⚔️',label:'itemSword',dur:4000},
+};
+
 /* ═══════ i18n ═══════ */
 const T={
   en:{subtitle:'ESCAPE THE INFERNO',title:'VOLCANO<br>JUMP',start:'PLAY',
@@ -329,7 +345,6 @@ const T={
       itemWing:'翅膀',itemSub:'潛艇倉',itemDrill:'鑽頭',itemSword:'寶劍',
       use:'使用',jump:'跳躍'},
 };
-let lang='en';
 function t(k){return T[lang][k]||T.en[k]||k;}
 function applyLang(){
   document.getElementById('txt-subtitle').textContent=t('subtitle');
@@ -342,21 +357,24 @@ function applyLang(){
   document.getElementById('txt-retry').textContent=t('retry');
   document.getElementById('txt-menu').textContent=t('menu');
   document.getElementById('score-label').textContent=t('hud');
-  document.getElementById('btn-use-label').textContent=t('use');
-  document.getElementById('btn-jump-label').textContent=t('jump');
+  // btn-use-label / btn-jump-label 只在遊戲中存在，安全檢查
+  const bul=document.getElementById('btn-use-label');
+  const bjl=document.getElementById('btn-jump-label');
+  if(bul) bul.textContent=t('use');
+  if(bjl) bjl.textContent=t('jump');
   document.getElementById('leg-wing').textContent=t('legWing');
   document.getElementById('leg-gem').textContent=t('legGem');
   document.getElementById('leg-sub').textContent=t('legSub');
   document.getElementById('leg-drill').textContent=t('legDrill');
   document.getElementById('leg-sword').textContent=t('legSword');
   document.getElementById('leg-bat').textContent=t('legBat');
-  renderItemBar();
+  // renderItemBar 只在 ITEM_INFO 初始化後才呼叫
+  if(typeof ITEM_INFO !== 'undefined') renderItemBar();
 }
 document.getElementById('lang-btn').addEventListener('click',()=>{ lang=lang==='en'?'zh':'en'; applyLang(); });
 applyLang();
 
 /* ═══════ BGM ═══════ */
-let bgm=null,bgmReady=false,gameStarted=false;
 (function(){try{const a=new Audio();a.loop=true;a.volume=0.42;
   a.addEventListener('canplaythrough',()=>{bgmReady=true;},{once:true});
   a.addEventListener('error',()=>{bgmReady=false;},{once:true});
@@ -368,16 +386,6 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden)pauseBGM();
 window.addEventListener('pagehide',stopBGM);window.addEventListener('beforeunload',stopBGM);
 
 /* ═══════ Item System ═══════ */
-// inventory: array of {type, count}
-// types: 'wing','sub','drill','sword'
-const ITEM_INFO={
-  wing:{emoji:'🪶',label:'itemWing',dur:6000},
-  sub: {emoji:'🚀',label:'itemSub', dur:5000},
-  drill:{emoji:'🔩',label:'itemDrill',dur:3000},
-  sword:{emoji:'⚔️',label:'itemSword',dur:4000},
-};
-var inventory=[];
-var selectedSlot=0; // which slot is selected
 
 function addItem(type){
   const existing=inventory.find(i=>i.type===type);
@@ -418,13 +426,11 @@ function renderItemBar(){
   });
   // Update USE button icon
   const sel=getSelectedItem();
-  document.getElementById('btn-use-icon').textContent=sel?ITEM_INFO[sel.type].emoji:'🎒';
+  const useIcon=document.getElementById('btn-use-icon');
+  if(useIcon) useIcon.textContent=sel?ITEM_INFO[sel.type].emoji:'🎒';
 }
 
 /* ═══════ Phaser ═══════ */
-const GW=420,GH=748;
-let bestScore=0,phaserGame=null;
-let scene=null; // ref to current GameScene
 
 /* Float text DOM-based (screen coords) */
 function showFloat(worldX,worldY,txt,color='#ffd700'){
