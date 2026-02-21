@@ -7,66 +7,53 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/phaser/3.60.0/phaser.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700;900&family=Cinzel:wght@400;600&display=swap" rel="stylesheet">
 <style>
-/* 基礎重置 */
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 body{background:#0a0005;display:flex;justify-content:center;align-items:center;height:100vh;overflow:hidden;font-family:'Cinzel',serif;}
 #game-container{position:relative;width:420px;height:748px;}
 canvas{display:block;}
 
-/* UI 層級 */
 #ui-overlay{position:absolute;top:0;left:0;right:0;bottom:0;pointer-events:none;z-index:10;}
 
 /* HUD */
-#hud-top{position:absolute;top:0;left:0;right:0;height:60px;pointer-events:none;
-  background:linear-gradient(to bottom,rgba(0,0,0,0.55),transparent);}
 #score-display{position:absolute;top:10px;left:16px;display:none;pointer-events:none;}
-#score-label{color:rgba(255,160,80,.6);font-size:9px;letter-spacing:3px;text-transform:uppercase;}
-#score-value{color:#ffd700;font-family:'Cinzel Decorative',cursive;font-size:26px;font-weight:900;line-height:1;
-  text-shadow:0 0 10px rgba(255,200,0,.8),2px 2px 3px rgba(0,0,0,.9);}
+#score-label{color:rgba(255,160,80,.6);font-size:9px;letter-spacing:3px;}
+#score-value{color:#ffd700;font-family:'Cinzel Decorative',cursive;font-size:26px;font-weight:900;}
+
 #lang-btn{position:absolute;top:10px;right:12px;pointer-events:all;
   background:linear-gradient(145deg,#1c0500,#4a1000);border:2px solid #ff6b00;color:#ffd700;
-  font-family:'Cinzel',serif;font-size:11px;font-weight:700;letter-spacing:1px;
-  padding:6px 14px;border-radius:30px;cursor:pointer;z-index:30;
-  box-shadow:0 0 12px rgba(255,100,0,.5),inset 0 1px 0 rgba(255,190,80,.3);}
+  padding:6px 14px;border-radius:30px;cursor:pointer;z-index:100;}
 
-/* 道具欄 (修正重複宣告) */
-#item-bar{
-  position:absolute;bottom:210px;left:50%;transform:translateX(-50%);
-  display:none;pointer-events:all;
-  flex-direction:row;gap:8px;align-items:center;
-  background:rgba(0,0,0,0.65);border:1px solid rgba(255,120,0,0.4);
-  border-radius:16px;padding:6px 10px;backdrop-filter:blur(6px);z-index:25;
-}
-.item-slot{
-  width:48px;height:48px;border-radius:10px;cursor:pointer;
+/* 道具欄 */
+#item-bar{position:absolute;bottom:210px;left:50%;transform:translateX(-50%);
+  display:none;pointer-events:all;flex-direction:row;gap:8px;
+  background:rgba(0,0,0,0.6);border:1px solid rgba(255,120,0,0.4);
+  border-radius:16px;padding:6px 10px;backdrop-filter:blur(5px);}
+.item-slot{width:48px;height:48px;border-radius:10px;cursor:pointer;
   background:rgba(20,5,0,0.7);border:2px solid rgba(255,100,0,0.3);
-  display:flex;align-items:center;justify-content:center;
-  flex-direction:column;position:relative;transition:all .15s;
-}
-.item-slot.selected{border-color:#00ffcc;box-shadow:0 0 15px rgba(0,255,180,0.6);background:rgba(0,40,30,0.8);}
-.item-emoji{font-size:24px;}
-.item-label{font-size:7px;color:rgba(255,180,80,.8);margin-top:1px;}
+  display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;}
+.item-slot.selected{border-color:#00ffcc;box-shadow:0 0 15px rgba(0,255,180,0.5);}
+.item-emoji{font-size:22px;}
+.item-label{font-size:7px;color:#ffcc88;}
 
 /* 控制按鈕 */
-#controls{position:absolute;bottom:0;left:0;right:0;height:220px;display:none;pointer-events:none;z-index:15;}
-#dpad{position:absolute;bottom:30px;left:20px;width:150px;height:150px;pointer-events:none;}
-.dpad-btn{position:absolute;pointer-events:all;background:rgba(50,15,0,0.8);border:2px solid #ff6b00;border-radius:10px;display:flex;align-items:center;justify-content:center;transition:0.1s;}
-.dpad-btn:active{background:#ff6b00;}
-#btn-up{left:50px;top:0;width:50px;height:50px;}
-#btn-left2{left:0;top:50px;width:50px;height:50px;}
-#btn-right2{right:0;top:50px;width:50px;height:50px;}
+#controls{position:absolute;bottom:0;left:0;right:0;height:220px;display:none;pointer-events:none;}
+.dpad-btn, #btn-jump, #btn-use{pointer-events:all;user-select:none;}
+#dpad{position:absolute;bottom:30px;left:20px;width:150px;height:150px;}
+.dpad-btn{position:absolute;width:55px;height:55px;background:rgba(80,20,0,0.6);border:2px solid #ff6b00;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#ffd700;font-size:24px;}
+#btn-up{left:50px;top:0;}
+#btn-left2{left:0;top:60px;}
+#btn-right2{right:100px;top:60px;} /* 修正重疊問題 */
 
-#right-btns{position:absolute;bottom:30px;right:20px;width:140px;height:150px;pointer-events:none;}
-#btn-jump{position:absolute;top:0;right:0;width:80px;height:80px;border-radius:50%;background:#6e1d00;border:3px solid #ff8800;pointer-events:all;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-#btn-use{position:absolute;bottom:0;left:0;width:70px;height:70px;border-radius:50%;background:#0a3020;border:3px solid #00ffcc;pointer-events:all;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+#right-btns{position:absolute;bottom:30px;right:20px;width:130px;height:150px;}
+#btn-jump{position:absolute;top:0;right:0;width:85px;height:85px;border-radius:50%;background:linear-gradient(145deg,#8b2200,#4a1000);border:3px solid #ff8800;color:#ff8800;display:flex;align-items:center;justify-content:center;font-weight:900;box-shadow:0 5px 15px rgba(0,0,0,0.5);}
+#btn-use{position:absolute;bottom:0;left:0;width:75px;height:75px;border-radius:50%;background:linear-gradient(145deg,#004433,#002211);border:3px solid #00ffcc;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+
+/* 螢幕特效 */
+#danger-flash{position:absolute;inset:0;pointer-events:none;z-index:5;}
 
 /* 選單與結算 */
-#menu-screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(10,0,5,0.9);z-index:100;pointer-events:all;}
-#gameover-screen{position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.85);z-index:110;pointer-events:all;}
-
-/* 動畫與閃爍 */
-#danger-flash{position:absolute;inset:0;pointer-events:none;z-index:5;transition:background 0.2s;}
-.luxury-btn{background:linear-gradient(160deg,#5c1400,#1e0500);padding:15px 50px;border-radius:50px;border:2px solid #ffd700;color:#ffd700;cursor:pointer;font-weight:bold;font-size:20px;}
+#menu-screen, #gameover-screen{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.8);z-index:200;pointer-events:all;}
+.luxury-btn{background:linear-gradient(160deg,#8b2200,#2a0500);padding:16px 50px;border-radius:50px;border:2px solid #ffd700;color:#ffd700;cursor:pointer;font-family:'Cinzel Decorative';font-size:20px;letter-spacing:2px;box-shadow:0 0 20px rgba(255,100,0,0.4);}
 </style>
 </head>
 <body>
@@ -84,32 +71,29 @@ canvas{display:block;}
         <div class="dpad-btn" id="btn-right2">▶</div>
       </div>
       <div id="right-btns">
-        <div id="btn-jump"><span style="font-size:20px">JUMP</span></div>
-        <div id="btn-use"><span id="btn-use-icon">🎒</span><span style="font-size:10px">USE</span></div>
+        <div id="btn-jump">JUMP</div>
+        <div id="btn-use"><span id="btn-use-icon" style="font-size:24px">🎒</span><span style="font-size:10px;color:#00ffcc">USE</span></div>
       </div>
     </div>
 
     <div id="menu-screen">
-      <h1 style="color:#ffd700;font-size:40px;margin-bottom:20px;text-align:center;">VOLCANO<br>JUMP</h1>
+      <h1 style="color:#ffd700;font-size:42px;text-shadow:0 0 20px #ff6600;margin-bottom:30px;text-align:center;">VOLCANO<br>JUMP</h1>
       <button class="luxury-btn" id="start-btn">PLAY</button>
     </div>
 
-    <div id="gameover-screen">
-      <h2 style="color:#ff3300;font-size:30px;">GAME OVER</h2>
-      <div style="color:#ffd700;font-size:50px;margin:20px 0;" id="final-score">0</div>
-      <button class="luxury-btn" id="retry-btn">RETRY</button>
+    <div id="gameover-screen" style="display:none">
+      <h2 style="color:#ff3300;margin-bottom:10px;">CONSUMED</h2>
+      <div style="color:#ffd700;font-size:50px;margin-bottom:20px;" id="final-score">0</div>
+      <button class="luxury-btn" id="retry-btn">RISE AGAIN</button>
     </div>
   </div>
 </div>
 
 <script>
-/* ═══════ 關鍵修復：變數提前宣告 ═══════ */
+/* ═══════ 全域宣告 ═══════ */
 var inventory = [];
 var selectedSlot = 0;
-var gameStarted = false;
 var phaserGame = null;
-var lang = 'en';
-
 const ITEM_INFO = {
   wing: { emoji: '🪶', label: 'WINGS' },
   sub:  { emoji: '🚀', label: 'CAPSULE' },
@@ -117,70 +101,138 @@ const ITEM_INFO = {
   sword:{ emoji: '⚔️', label: 'SWORD' }
 };
 
-/* ═══════ 功能函數 ═══════ */
 function renderItemBar() {
   const bar = document.getElementById('item-bar');
-  if (!bar) return;
   bar.innerHTML = '';
-  if (inventory.length === 0) {
-    bar.style.display = 'none';
-    return;
-  }
+  if (inventory.length === 0) { bar.style.display = 'none'; return; }
   bar.style.display = 'flex';
   inventory.forEach((item, i) => {
     const slot = document.createElement('div');
     slot.className = 'item-slot' + (i === selectedSlot ? ' selected' : '');
-    slot.innerHTML = `<span class="item-emoji">${ITEM_INFO[item.type].emoji}</span>
-                      <span class="item-label">${ITEM_INFO[item.type].label}</span>`;
-    slot.onclick = () => { selectedSlot = i; renderItemBar(); };
+    slot.innerHTML = `<span class="item-emoji">${ITEM_INFO[item.type].emoji}</span><span class="item-label">${ITEM_INFO[item.type].label}</span>`;
+    slot.onclick = (e) => { e.stopPropagation(); selectedSlot = i; renderItemBar(); };
     bar.appendChild(slot);
   });
 }
 
-function startGame() {
-  inventory = [];
-  selectedSlot = 0;
-  gameStarted = true;
+/* ═══════ 遊戲場景 ═══════ */
+class MainScene extends Phaser.Scene {
+  constructor() { super('MainScene'); }
   
-  // 顯示/隱藏 UI
-  document.getElementById('menu-screen').style.display = 'none';
-  document.getElementById('gameover-screen').style.display = 'none';
-  document.getElementById('score-display').style.display = 'block';
-  document.getElementById('controls').style.display = 'block';
-  renderItemBar();
+  create() {
+    this.score = 0;
+    this.alive = true;
+    this.lavaY = 800;
+    this.platforms = this.physics.add.staticGroup();
+    
+    // 生成初始平台
+    for(let i=0; i<15; i++) {
+        let x = Phaser.Math.Between(50, 370);
+        let y = 700 - (i * 120);
+        this.platforms.create(x, y, 'plat');
+    }
 
-  if (!phaserGame) {
-    phaserGame = new Phaser.Game(cfg);
-  } else {
-    phaserGame.scene.start('GameScene');
+    this.player = this.physics.add.sprite(210, 600, 'hero');
+    this.player.setCollideWorldBounds(false);
+    this.physics.add.collider(this.player, this.platforms, (p, plat) => {
+        if(p.body.touching.down) p.setVelocityY(-550);
+    });
+
+    this.cameras.main.startFollow(this.player, true, 0, 0.1, 0, 150);
+    this.lavaGfx = this.add.graphics().setDepth(5);
+    
+    // 控制綁定
+    this.cursors = this.input.keyboard.createCursorKeys();
+    this.setupTouchControls();
+  }
+
+  setupTouchControls() {
+    this.moveL = false; this.moveR = false;
+    document.getElementById('btn-left2').onpointerdown = () => this.moveL = true;
+    document.getElementById('btn-left2').onpointerup = () => this.moveL = false;
+    document.getElementById('btn-right2').onpointerdown = () => this.moveR = true;
+    document.getElementById('btn-right2').onpointerup = () => this.moveR = false;
+    document.getElementById('btn-jump').onpointerdown = () => { if(this.player.body.touching.down) this.player.setVelocityY(-700); };
+  }
+
+  update() {
+    if(!this.alive) return;
+    
+    // 移動邏輯
+    if(this.moveL || this.cursors.left.isDown) this.player.setVelocityX(-250);
+    else if(this.moveR || this.cursors.right.isDown) this.player.setVelocityX(250);
+    else this.player.setVelocityX(0);
+
+    // 岩漿上升
+    this.lavaY -= 0.8 + (this.score / 500);
+    this.drawLava();
+
+    // 計分
+    let dist = Math.floor((600 - this.player.y) / 10);
+    if(dist > this.score) {
+        this.score = dist;
+        document.getElementById('score-value').textContent = this.score;
+    }
+
+    // 死亡判定
+    if(this.player.y > this.lavaY) this.gameOver();
+  }
+
+  drawLava() {
+    this.lavaGfx.clear();
+    this.lavaGfx.fillStyle(0xff4400, 0.8);
+    let screenLavaY = this.lavaY - this.cameras.main.scrollY;
+    this.lavaGfx.fillRect(0, screenLavaY, 420, 1000);
+    
+    // 危機閃爍
+    let dist = this.lavaY - this.player.y;
+    let alpha = Phaser.Math.Clamp(1 - (dist / 300), 0, 0.6);
+    document.getElementById('danger-flash').style.background = `rgba(255,0,0,${alpha})`;
+  }
+
+  gameOver() {
+    this.alive = false;
+    document.getElementById('final-score').textContent = this.score;
+    document.getElementById('gameover-screen').style.display = 'flex';
+    document.getElementById('controls').style.display = 'none';
   }
 }
 
-/* ═══════ Phaser 遊戲邏輯 (簡化版示意) ═══════ */
-class GameScene extends Phaser.Scene {
-  constructor() { super('GameScene'); }
-  create() {
-    // 初始化玩家、平台等邏輯...
-    this.add.text(210, 300, 'GAME RUNNING', {fontSize:'20px'}).setOrigin(0.5);
-    // 這裡放入你原本的 GameScene 代碼
-  }
-  update() {
-    // 這裡放入你原本的 Update 代碼
-  }
+// 預載場景 (生成材質防止黑屏)
+class BootScene extends Phaser.Scene {
+    constructor() { super('BootScene'); }
+    create() {
+        // 生成英雄材質
+        let g = this.make.graphics({add:false});
+        g.fillStyle(0xffaa00); g.fillCircle(15, 15, 15);
+        g.generateTexture('hero', 30, 30);
+        // 生成平台材質
+        g.clear(); g.fillStyle(0x884422); g.fillRoundedRect(0, 0, 80, 15, 5);
+        g.generateTexture('plat', 80, 15);
+        this.scene.start('MainScene');
+    }
 }
 
 const cfg = {
-  type: Phaser.AUTO,
-  width: 420, height: 748,
+  type: Phaser.AUTO, width: 420, height: 748,
   parent: 'game-container',
-  transparent: true,
-  physics: { default: 'arcade', arcade: { gravity: { y: 600 } } },
-  scene: [GameScene]
+  physics: { default: 'arcade', arcade: { gravity: { y: 1000 } } },
+  scene: [BootScene, MainScene]
 };
 
-// 綁定按鈕
-document.getElementById('start-btn').onclick = startGame;
-document.getElementById('retry-btn').onclick = startGame;
+document.getElementById('start-btn').onclick = () => {
+    document.getElementById('menu-screen').style.display = 'none';
+    document.getElementById('score-display').style.display = 'block';
+    document.getElementById('controls').style.display = 'block';
+    if(!phaserGame) phaserGame = new Phaser.Game(cfg);
+    else phaserGame.scene.start('BootScene');
+};
+
+document.getElementById('retry-btn').onclick = () => {
+    document.getElementById('gameover-screen').style.display = 'none';
+    document.getElementById('controls').style.display = 'block';
+    phaserGame.scene.start('BootScene');
+};
 </script>
 </body>
 </html>
