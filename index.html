@@ -161,17 +161,24 @@ canvas{display:block;}
   background:#000;z-index:50;display:flex;
   align-items:center;justify-content:center;
   flex-direction:column;
+  cursor:pointer;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
 }
 #intro-video{
   width:100%;height:100%;object-fit:cover;
   position:absolute;top:0;left:0;
+  z-index:0;pointer-events:none;
 }
 #intro-skip{
-  position:absolute;bottom:40px;right:20px;z-index:51;
-  background:rgba(0,0,0,0.6);border:1px solid rgba(255,150,0,0.5);
-  color:rgba(255,180,80,0.8);font-family:'Cinzel',serif;
-  font-size:11px;letter-spacing:2px;padding:8px 18px;border-radius:20px;
+  position:absolute;bottom:40px;right:20px;z-index:55;
+  background:rgba(0,0,0,0.7);border:2px solid rgba(255,150,0,0.7);
+  color:rgba(255,200,80,1);font-family:'Cinzel',serif;
+  font-size:13px;letter-spacing:2px;padding:10px 22px;border-radius:20px;
   cursor:pointer;pointer-events:all;transition:all .2s;
+  /* 確保觸控穿透正確 */
+  -webkit-tap-highlight-color:rgba(255,150,0,0.3);
+  touch-action:manipulation;
 }
 #intro-skip:active{background:rgba(80,30,0,0.8);}
 #intro-no-video{
@@ -514,35 +521,54 @@ applyLang();
   const introVideo  = document.getElementById('intro-video');
   const introNoVid  = document.getElementById('intro-no-video');
   const skipBtn     = document.getElementById('intro-skip');
-  // Menu starts hidden until intro ends
+
+  // 隱藏選單，等 intro 結束才顯示
   document.getElementById('menu-screen').style.display='none';
 
+  var introDone = false; // ← 防止重複執行
+  var maxTimer  = null;
+
   function endIntro(){
-    introScreen.style.transition='opacity 0.6s';
+    if(introDone) return;   // 已執行過就忽略
+    introDone = true;
+    if(maxTimer) clearTimeout(maxTimer);
+    // 停止影片避免繼續佔資源
+    try{ introVideo.pause(); introVideo.src=''; }catch(e){}
+    // 淡出
+    introScreen.style.transition='opacity 0.5s ease';
     introScreen.style.opacity='0';
-    setTimeout(()=>{
+    setTimeout(function(){
       introScreen.style.display='none';
       document.getElementById('menu-screen').style.display='flex';
-    },620);
+    }, 520);
   }
 
-  // Try to play video
-  introVideo.addEventListener('ended', endIntro);
-  introVideo.addEventListener('error', ()=>{
-    // No video file: show animated title fallback for 2.5s
+  // 影片播完
+  introVideo.addEventListener('ended',  endIntro, {once:true});
+  // 影片讀取失敗（無檔案）→ 顯示動畫標題 2.5 秒後跳過
+  introVideo.addEventListener('error', function(){
     introVideo.style.display='none';
     introNoVid.style.display='flex';
-    setTimeout(endIntro, 2500);
-  });
-  // Also skip after 15s max in case video is very long
-  const maxTimer = setTimeout(endIntro, 15000);
-  introVideo.addEventListener('ended', ()=>clearTimeout(maxTimer));
+    maxTimer = setTimeout(endIntro, 2500);
+  }, {once:true});
 
-  skipBtn.addEventListener('click',  ()=>{ clearTimeout(maxTimer); endIntro(); });
-  skipBtn.addEventListener('touchend',(e)=>{ e.preventDefault(); clearTimeout(maxTimer); endIntro(); },{passive:false});
+  // 保底計時器（影片超過 20 秒強制跳過）
+  maxTimer = setTimeout(endIntro, 20000);
 
-  // Try loading video (will fire error if file missing)
+  // SKIP 按鈕 + 整個畫面點擊都可跳過
+  function onTap(e){ e.preventDefault(); e.stopPropagation(); endIntro(); }
+  skipBtn.addEventListener('touchstart', onTap, {passive:false});
+  skipBtn.addEventListener('click', onTap);
+  // 影片播完後點畫面任何地方也可跳過
+  introScreen.addEventListener('touchstart', function(e){
+    e.preventDefault();
+    endIntro();
+  }, {passive:false});
+  introScreen.addEventListener('click', endIntro);
+
+  // 載入並播放影片
   introVideo.load();
+  introVideo.play().catch(function(){/* 桌機需互動才能自動播，點擊即可跳過 */});
 })();
 
 /* ═══════ BGM ═══════ */
