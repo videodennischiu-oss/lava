@@ -274,45 +274,33 @@ canvas{display:block;}
 .btn-sm-text{color:rgba(255,195,100,.65);font-family:'Cinzel',serif;font-size:12px;letter-spacing:2px;}
 
 /* ── Intro ── */
-#intro-screen{
-  position:fixed;top:0;left:0;width:100%;height:100%;
-  background:#000;z-index:9999;display:block;
-}
-#intro-video{
-  position:absolute;top:0;left:0;width:100%;height:100%;
-  object-fit:cover;z-index:1;
-  pointer-events:none; /* 關鍵：video不吃觸控 */
-}
 #intro-overlay{
-  /* 蓋在video上的透明點擊層 */
-  position:absolute;top:0;left:0;width:100%;height:100%;
-  z-index:2;cursor:pointer;
+  position:fixed;inset:0;
+  display:flex;justify-content:center;align-items:center;
+  background:#000;z-index:9999;
+  transition:opacity 0.8s ease;
 }
-#intro-skip{
-  position:absolute;bottom:50px;right:24px;
-  z-index:3; /* 最上層 */
-  background:rgba(0,0,0,0.75);
-  border:2px solid rgba(255,160,50,0.8);
-  color:#ffcc66;font-family:'Cinzel',serif;
-  font-size:14px;letter-spacing:2px;
-  padding:12px 28px;border-radius:24px;
-  cursor:pointer;
-  /* iOS 點擊關鍵屬性 */
-  -webkit-tap-highlight-color:rgba(255,150,0,0.4);
-  touch-action:manipulation;
-  user-select:none;-webkit-user-select:none;
+#intro-overlay.fade-out{ opacity:0; pointer-events:none; }
+#intro-video{
+  max-height:100vh;
+  max-width:calc(100vh * 9/16);
+  width:100%;height:100%;
+  object-fit:cover;
 }
-#intro-fallback{
-  position:absolute;top:50%;left:50%;
-  transform:translate(-50%,-50%);
-  z-index:2;text-align:center;
-  display:none;
+#skip-btn{
+  position:absolute;bottom:60px;right:40px;
+  padding:14px 32px;
+  background:rgba(10,5,0,0.72);
+  border:1.5px solid rgba(255,150,50,0.7);
+  border-radius:40px;
+  color:#ffcc66;font-size:22px;
+  font-family:'Cinzel',Georgia,serif;
+  cursor:pointer;letter-spacing:2px;
+  backdrop-filter:blur(4px);
+  transition:background 0.2s,border-color 0.2s;
 }
-#intro-fallback h1{
-  color:#ffd700;font-family:'Cinzel Decorative',cursive;
-  font-size:44px;font-weight:900;
-  text-shadow:0 0 30px rgba(255,150,0,1);
-  animation:titlePulse 1.5s ease-in-out infinite;
+#skip-btn:hover,#skip-btn:active{
+  background:rgba(255,150,0,0.18);border-color:#ffcc44;
 }
 
 /* ── Island button ── */
@@ -340,12 +328,10 @@ canvas{display:block;}
 </div>
 <div id="game-container">
 
-  <!-- ① Intro Screen：video在最底，overlay透明點擊層在中，skip按鈕在最上 -->
-  <div id="intro-screen">
-    <video id="intro-video" src="intro.mp4" playsinline muted autoplay loop></video>
-    <div id="intro-overlay"></div>
-    <div id="intro-fallback"><h1>VOLCANO<br>JUMP</h1></div>
-    <button id="intro-skip">SKIP ▶</button>
+  <!-- ══ 開場影片 intro.mp4 放同一資料夾 ══ -->
+  <div id="intro-overlay">
+    <video id="intro-video" playsinline muted preload="auto" src="intro.mp4"></video>
+    <button id="skip-btn">SKIP ›</button>
   </div>
 
   <div id="ui-overlay">
@@ -504,7 +490,7 @@ function applyLang(){
   if(ib)  ib.textContent=t('island');
   if(ibg) ibg.textContent=t('island');
   // Skip btn
-  const sk=document.getElementById('intro-skip');
+  var sk=document.getElementById('skip-btn');
   if(sk) sk.textContent=t('introSkip');
   // Item bar
   if(typeof ITEM_INFO !== 'undefined') renderItemBar();
@@ -521,57 +507,61 @@ function applyLang(){
 })();
 applyLang();
 
-/* ═══════ Intro ═══════ */
-(function(){
-  var done = false;
-  var el = {
-    screen:  document.getElementById('intro-screen'),
-    video:   document.getElementById('intro-video'),
-    overlay: document.getElementById('intro-overlay'),
-    skip:    document.getElementById('intro-skip'),
-    fall:    document.getElementById('intro-fallback'),
-    menu:    document.getElementById('menu-screen'),
-  };
-  el.menu.style.display = 'none';
+/* ═══════ Intro（照抄參考遊戲寫法）═══════ */
+function initIntro(){
+  const overlay = document.getElementById('intro-overlay');
+  const video   = document.getElementById('intro-video');
+  const skip    = document.getElementById('skip-btn');
 
-  function go(){
+  if(!overlay || !video){ showMenu(); return; }
+
+  // 隱藏選單，等 intro 結束
+  document.getElementById('menu-screen').style.display='none';
+
+  var done = false;
+  function endIntro(){
     if(done) return;
     done = true;
-    try{ el.video.pause(); }catch(e){}
-    el.screen.style.opacity = '0';
-    el.screen.style.transition = 'opacity 0.4s';
-    setTimeout(function(){
-      el.screen.style.display = 'none';
-      el.menu.style.display   = 'flex';
-    }, 420);
+    video.pause();
+    overlay.classList.add('fade-out');
+    setTimeout(function(){ overlay.style.display='none'; showMenu(); }, 800);
   }
 
-  // video ends → go
-  el.video.addEventListener('ended', go);
-
-  // video fails → show fallback title, auto-go after 2.5s
-  el.video.addEventListener('error', function(){
-    el.video.style.display = 'none';
-    el.fall.style.display  = 'block';
-    setTimeout(go, 2500);
-  });
-
-  // 保底 20s
-  var guard = setTimeout(go, 20000);
-  el.video.addEventListener('ended', function(){ clearTimeout(guard); });
-
-  // ── 核心修正：skip 和 overlay 都用 ontouchstart（屬性，最高優先） ──
-  function bindTap(el2, fn){
-    el2.ontouchstart = function(e){ e.preventDefault(); fn(); };
-    el2.onclick = fn;
+  function showMenu(){
+    document.getElementById('menu-screen').style.display='flex';
   }
-  bindTap(el.skip,    function(){ clearTimeout(guard); go(); });
-  bindTap(el.overlay, function(){ clearTimeout(guard); go(); });
 
-  // 嘗試播放
-  var p = el.video.play();
-  if(p && p.catch) p.catch(function(){});
-})();
+  video.addEventListener('ended', endIntro);
+  video.addEventListener('error', function(){ overlay.style.display='none'; showMenu(); });
+
+  if(skip){
+    skip.addEventListener('click', endIntro);
+    skip.addEventListener('touchend', function(e){ e.preventDefault(); endIntro(); });
+  }
+
+  // 播影片
+  var p = video.play();
+  if(p && p.catch){
+    p.catch(function(){
+      // 自動播放被擋 → 顯示點擊提示
+      var hint = document.createElement('div');
+      hint.textContent = '▶  點擊進入';
+      hint.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);color:#ffcc66;font-size:42px;font-family:Georgia,serif;text-shadow:0 2px 16px #000;cursor:pointer;z-index:10;';
+      overlay.appendChild(hint);
+      overlay.addEventListener('pointerdown', function(){
+        hint.remove();
+        video.play().catch(function(){ overlay.style.display='none'; showMenu(); });
+      }, {once:true});
+    });
+  }
+}
+
+// DOM ready 後執行
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', initIntro);
+} else {
+  initIntro();
+}
 
 /* ═══════ BGM ═══════ */
 (function(){try{const a=new Audio();a.loop=true;a.volume=0.42;
